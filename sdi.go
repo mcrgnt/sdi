@@ -14,12 +14,15 @@ type poolEntry struct {
 
 // Resolve wires dependencies via Deps/Inject. Pool entries must be materialized before call.
 // One-dep: 0 → unresolved, 1 → inject, 2+ → ambiguous. Many-deps: registration order.
+// Mutual Deps cycles are allowed; use [CheckCycles] for optional DAG lint.
 func Resolve(reg Registry) error {
-	entries := collectEntries(reg)
-	if err := checkCycles(entries); err != nil {
-		return err
-	}
-	return inject(entries)
+	return inject(collectEntries(reg))
+}
+
+// CheckCycles reports dependency cycles in Deps() graph. Resolve does not call this.
+// Optional lint for CI or debug when DAG discipline is desired.
+func CheckCycles(reg Registry) error {
+	return checkCycles(collectEntries(reg))
 }
 
 func collectEntries(reg Registry) []poolEntry {

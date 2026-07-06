@@ -68,10 +68,9 @@ func TestResolve(t *testing.T) {
 		}
 	})
 
-	t.Run("circular dependency error", func(t *testing.T) {
-		err := Resolve(restest.With(&structA{}, &structB{}))
-		if err == nil || !strings.Contains(err.Error(), "circular dependency") {
-			t.Errorf("expected circular dependency error, got %v", err)
+	t.Run("Resolve wires mutual deps", func(t *testing.T) {
+		if err := Resolve(restest.With(&structA{}, &structB{})); err != nil {
+			t.Errorf("expected no error, got %v", err)
 		}
 	})
 
@@ -331,4 +330,16 @@ func TestResolve_manyDependencies(t *testing.T) {
 			t.Fatalf("expected 2 repos, got %d", len(consumer.repos))
 		}
 	})
+}
+
+func TestCheckCycles(t *testing.T) {
+	reg := restest.With(&structA{}, &structB{})
+
+	if err := CheckCycles(reg); err == nil || !strings.Contains(err.Error(), "circular dependency") {
+		t.Errorf("expected circular dependency error, got %v", err)
+	}
+
+	if err := Resolve(reg); err != nil {
+		t.Errorf("Resolve with mutual deps: expected no error, got %v", err)
+	}
 }
